@@ -99,8 +99,7 @@ public class Scanner {
     public TNFA constructRegexNFA(Regex r) {
         RegexTree tree = constructRegexTree(r);
         ThompsonConstruction thompsonConstruction = new ThompsonConstruction();
-        // System.out.println("tree.getRoot():" + tree.getRoot());
-        TNFA nfa = thompsonConstruction.regexToNFA(tree.getRoot());
+        TNFA nfa = thompsonConstruction.translate(tree.getRoot(), tree.getRoot());
 
         setAlphabetForNfa(r, nfa);
 

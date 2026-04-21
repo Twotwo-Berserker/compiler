@@ -1,6 +1,6 @@
 package org.qogir.compiler.grammar.regularGrammar;
 
-/** 正则表达式
+/**
  * The definition regular expression
  * The form of regex id "id := regex" ;
  * "id" , left hand of equation ":=", is the name or identifier of the regex

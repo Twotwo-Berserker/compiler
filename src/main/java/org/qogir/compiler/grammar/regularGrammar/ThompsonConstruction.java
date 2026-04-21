@@ -1,178 +1,157 @@
 package org.qogir.compiler.grammar.regularGrammar;
 
-import org.qogir.compiler.FA.FiniteAutomaton;
 import org.qogir.compiler.FA.State;
+import org.qogir.compiler.util.graph.LabeledDirectedGraph;
+
+import java.util.ArrayDeque;
+import java.util.Set;
+
 import org.qogir.compiler.util.graph.LabelEdge;
+import org.qogir.compiler.util.tree.DefaultTreeNode;
+
+import com.alibaba.fastjson.asm.Label;
 
 public class ThompsonConstruction {
-    // ε 空转移常量
-    public static final char EPSILON = 'ε';
 
-    /**
-     * 对外入口：正则语法树 -> TNFA
-     */
-    public TNFA regexToNFA(RegexTreeNode rootNode) {
-        TNFA fullNfa = buildFromTree(rootNode);
-        // 重新编排状态ID，保证输出美观、顺序统一
-        // fullNfa.renumberSID();
-        return fullNfa;
+    public TNFA translate(RegexTreeNode node, RegexTreeNode root) {
+        if (node == null) return null;
+
+        TNFA tnfa=new TNFA();
+        //Add your implementation
+       tnfa=build(node);
+
+        return tnfa;
     }
-
-    /**
-     * 递归遍历语法树，按Thompson规则构造NFA片段
-     */
-    private TNFA buildFromTree(RegexTreeNode node) {
-        if (node == null) return new TNFA();
-
-        return switch (node.getType()) {
-            // 节点0：基础字符
-            case 0 -> buildSingleChar(node.getValue());
-            // 节点1：隐式连接 Concat
-            case 1 -> buildConcat(
-                    buildFromTree((RegexTreeNode)node.getFirstChild()),
-                    buildFromTree((RegexTreeNode)node.getLastChild())
-            );
-            // 节点2：或运算 |
-            case 2 -> buildUnion(
-                    buildFromTree((RegexTreeNode)node.getFirstChild()),
-                    buildFromTree((RegexTreeNode)node.getLastChild())
-            );
-            // 节点3：克林闭包 *
-            case 3 -> buildKleeneStar(buildFromTree((RegexTreeNode)node.getFirstChild()));
-            default -> throw new RuntimeException("不支持的语法树节点类型: " + node.getType());
-        };
-    }
-
-    // 1. 单个基础字符的最小NFA
-    private TNFA buildSingleChar(char c) {
-        TNFA nfa = new TNFA();
-        State start = nfa.getStartState();
-        State end = nfa.getAcceptingState();
-
-        nfa.getTransitTable().addEdge(start, end, c);
-        // System.out.println("addEdge:" + start + "-" + c + " -> " + end);
-        return nfa;
-    }
-
-    // 2. 连接运算 AB
-    private TNFA buildConcat(TNFA nfaA, TNFA nfaB) {
-        TNFA res = new TNFA(); // 不自动新建首尾状态
-        mergeAll(res, nfaA);
-        mergeAll(res, nfaB);
-
-        // A 的终点 ε 连接 B 的起点
-        State AEnd = nfaA.getAcceptingState();
-        AEnd.setType(State.MIDDLE); // 连接后不再是终点
-        State BStart = nfaB.getStartState();
-        BStart.setType(State.MIDDLE); // 连接后不再是起点
-        res.getTransitTable().addEdge(
-                AEnd,
-                BStart,
-                EPSILON
-        );
-
-        res.setStartState(nfaA.getStartState());
-        res.setAcceptingState(nfaB.getAcceptingState());
-        return res;
-    }
-
-    // 3. 或运算 A|B
-    private TNFA buildUnion(TNFA nfaA, TNFA nfaB) {
-        TNFA res = new TNFA();
-        State newStart = res.getStartState();
-        State newEnd = res.getAcceptingState();
-
-        mergeAll(res, nfaA);
-        mergeAll(res, nfaB);
-
-        // 新起点 ε 分别指向两个子NFA起点
-        State AStart = nfaA.getStartState();
-        AStart.setType(State.MIDDLE);
-        State BStart = nfaB.getStartState();
-        BStart.setType(State.MIDDLE);
-        res.getTransitTable().addEdge(newStart, AStart, EPSILON);
-        res.getTransitTable().addEdge(newStart, BStart, EPSILON);
-
-        // 两个子NFA终点 ε 统一指向新终点
-        State AEnd = nfaA.getAcceptingState();
-        AEnd.setType(State.MIDDLE);
-        State BEnd = nfaB.getAcceptingState();
-        BEnd.setType(State.MIDDLE);
-        res.getTransitTable().addEdge(AEnd, newEnd, EPSILON);
-        res.getTransitTable().addEdge(BEnd, newEnd, EPSILON);
-
-        return res;
-    }
-
-    // 4. 克林闭包 A*
-    private TNFA buildKleeneStar(TNFA nfaA) {
-        TNFA res = new TNFA();
-        State newStart = res.getStartState();
-        State newEnd = res.getAcceptingState();
-
-        mergeAll(res, nfaA);
-
-        State AStart = nfaA.getStartState();
-        AStart.setType(State.MIDDLE);
-        State AEnd = nfaA.getAcceptingState();
-        AEnd.setType(State.MIDDLE);
-        // Thompson闭包标准4条ε边
-        res.getTransitTable().addEdge(newStart, AStart, EPSILON);
-        res.getTransitTable().addEdge(newStart, newEnd, EPSILON);
-        res.getTransitTable().addEdge(AEnd, AStart, EPSILON);
-        res.getTransitTable().addEdge(AEnd, newEnd, EPSILON);
-
-        return res;
-    }
-
-    /**
-     * 工具：把源自动机的所有状态、转移边完整合并到目标自动机
-     */
-    private void mergeAll(TNFA target, FiniteAutomaton source) {
-        var targetTable = target.getTransitTable();
-        var sourceTable = source.getTransitTable();
-
-        // 复制所有状态顶点
-        for (State state : sourceTable.vertexSet()) {
-            targetTable.addVertex(state);
-        }
-
-        // 复制全部转移边
-        for (LabelEdge e : sourceTable.edgeSet()) {
-            State s = (State) e.getSource();
-            State t = (State) e.getTarget();
-            Character label = e.getLabel();
-            targetTable.addEdge(s, t, label);
+    private TNFA build(RegexTreeNode node) {
+        switch (node.getType()) {
+            case 0: // 基本字符
+                return buildBasic(node);
+            case 1: // 连接（多个子表达式）
+                return buildConcat(node);
+            case 2: // 并集（多个分支）
+                return buildUnion(node);
+            case 3: // 闭包
+                return buildStar(node);
+            default:
+                throw new IllegalArgumentException("Unsupported node type: " + node.getType());
         }
     }
 
-    // =============================================
-    // ✅ 打印方法：完全和课件截图格式一模一样
-    // =============================================
-    public void printNfaFormat(TNFA nfa) {
-        // 1. 打印开始状态
-        System.out.println("Start State:" + nfa.getStartState().getId());
-        // 2. 打印表头
-        System.out.println("the transitTable is:");
+    // 基本字符：a 或 ε
+    private TNFA buildBasic(RegexTreeNode node) {
+        char ch = node.getValue();
+        State start = new State();          // 新建起始状态
+        State accept = new State();          // 新建接受状态
+        accept.setType(State.ACCEPT);
+        start.setType(State.START);
 
-        // 3. 遍历所有边，严格输出 (源ID:源类型->目标ID:目标类型 @ 字符)
-        var table = nfa.getTransitTable();
-        for (LabelEdge edge : table.edgeSet()) {
-            State src = (State) edge.getSource();
-            State dst = (State) edge.getTarget();
-            char label = edge.getLabel();
+        TNFA tnfa = new TNFA(accept);        // 使用外部接受状态构造 TNFA
+        tnfa.setStartState(start);
+        tnfa.getTransitTable().addVertex(start);
 
-            String sym = (label == EPSILON) ? "ε" : String.valueOf(label);
+        // 添加转移边：起始 -> 接受
+        tnfa.getTransitTable().addEdge(start, accept, ch);
+        return tnfa;
+    }
 
-            // 格式：(源ID:源类型->目标ID:目标类型 @ 符号)
-            System.out.printf(
-                    "(%d:%d->%d:%d @ %s)\n",
-                    src.getId(),
-                    src.getType(),
-                    dst.getId(),
-                    dst.getType(),
-                    sym
-            );
+    // 连接：依次串联所有子节点（如 abc）
+    private TNFA buildConcat(RegexTreeNode node) {
+        RegexTreeNode child =  (RegexTreeNode)node.getFirstChild();
+        if (child == null) return null;
+
+        TNFA first = build(child);           // 第一个子表达式的 NFA
+        child = (RegexTreeNode)child.getNextSibling();
+
+        while (child != null) {
+            TNFA next = build(child);
+            // 将 first 的接受状态与 next 的起始状态用 ε 边连接
+            first.getTransitTable().addEdge(first.getAcceptingState(),
+                                            next.getStartState(),
+                                            'ε');
+            // 合并 next 的所有状态和边到 first 中
+            mergeTNFA(first, next);
+            // 更新 first 的接受状态为 next 的接受状态
+            first.getAcceptingState().setType(State.MIDDLE);
+            first.setAcceptingState(next.getAcceptingState());
+            child = (RegexTreeNode)child.getNextSibling();
+        }
+        return first;
+    }
+
+    // 并集：并联所有分支（如 a|b|c）
+    private TNFA buildUnion(RegexTreeNode node) {
+        State newStart = new State();
+        State newAccept = new State();
+        newAccept.setType(State.ACCEPT);
+        newStart.setType(State.START);
+        
+        TNFA result = new TNFA(newAccept);
+        result.setStartState(newStart);
+        result.getTransitTable().addVertex(newStart);
+        result.getTransitTable().addVertex(newAccept);
+
+        RegexTreeNode child = (RegexTreeNode)node.getFirstChild();
+        while (child != null) {
+            TNFA branch = build(child);
+            // 从新起始状态 ε 到分支起始
+            result.getTransitTable().addEdge(newStart, branch.getStartState(), 'ε');
+            // 从分支接受状态 ε 到新接受状态
+            result.getTransitTable().addEdge(branch.getAcceptingState(), newAccept, 'ε');
+            // 合并分支的状态和边
+            mergeTNFA(result, branch);
+            branch.getAcceptingState().setType(State.MIDDLE);
+            child = (RegexTreeNode)child.getNextSibling();
+        }
+        return result;
+    }
+
+    // 闭包：Kleene 星号（*）
+    private TNFA buildStar(RegexTreeNode node) {
+        RegexTreeNode innerNode = (RegexTreeNode)node.getFirstChild();
+        if (innerNode == null) return null;
+
+        TNFA inner = build(innerNode);
+        State newStart = new State();
+        State newAccept = new State();
+        newAccept.setType(State.ACCEPT);
+        
+        newStart.setType(State.START);
+
+        TNFA result = new TNFA(newAccept);
+        result.setStartState(newStart);
+        result.getTransitTable().addVertex(newStart);
+        result.getTransitTable().addVertex(newAccept);
+
+        // 1) 新起始 -> 内部起始
+        result.getTransitTable().addEdge(newStart, inner.getStartState(), 'ε');
+        // 2) 内部接受 -> 内部起始（循环）
+        result.getTransitTable().addEdge(inner.getAcceptingState(), inner.getStartState(), 'ε');
+        // 3) 内部接受 -> 新接受
+        result.getTransitTable().addEdge(inner.getAcceptingState(), newAccept, 'ε');
+        // 4) 新起始 -> 新接受（零次重复）
+        result.getTransitTable().addEdge(newStart, newAccept, 'ε');
+
+        // 合并内部 NFA 的状态和边
+        mergeTNFA(result, inner);
+        inner.getAcceptingState().setType(State.MIDDLE);
+        return result;
+    }
+
+    // 将 src NFA 的所有状态和边合并到 dest NFA 中
+    private void mergeTNFA(TNFA dest, TNFA src) {
+        LabeledDirectedGraph<State> destGraph = dest.getTransitTable();
+        LabeledDirectedGraph<State> srcGraph = src.getTransitTable();
+
+        // 合并状态
+        for (State s:srcGraph.vertexSet()) {
+            if (!destGraph.containsVertex(s)) {
+                destGraph.addVertex(s);
+            }
+            if(s.getType()==State.START)s.setType(State.MIDDLE);
+        }
+        // 合并边
+        for (LabelEdge from : srcGraph.edgeSet()) {
+            destGraph.addEdge((State)from.getSource(), (State)from.getTarget(), from.getLabel());
         }
     }
 }

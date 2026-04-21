@@ -21,6 +21,7 @@ public class StateMinimization {
         //Add your implementation
 
         HashMap<Integer,HashMap<Integer, State>> groupSet = new HashMap<>(); // group set
+        
         return groupSet;
     }
 
@@ -28,7 +29,7 @@ public class StateMinimization {
 
         //Add your implementation
 
-        return null;
+        return dfa;
     }
 
 //    /**

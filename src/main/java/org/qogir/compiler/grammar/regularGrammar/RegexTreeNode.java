@@ -14,21 +14,15 @@ public class RegexTreeNode extends DefaultTreeNode {
      */
     private final int id;//state id
     private Character value;
-    private int type; 
-    // 0-基础字符（如a、b）；1-连接运算符（如ab的连接）；
-    // 2-并运算符（如a|b的|）；3-克林闭包（*）；
-    // 4-左括号；5-右括号
-    private boolean isFull = false; // 标记该节点的右子树是否已完成
+    private int type; //0-basic；1-concatenation；2-union； 3-kleene closure; 4-leftParenthesis; 5-rightParenthesis
 
-    // 构造方法1：仅初始化节点值和类型
     public RegexTreeNode(Character ch, int t) {
         super();
-        this.value = ch;
-        this.type = t;
+        value = ch;
+        type = t;
         id = Node_ID++;
     }
 
-    // 构造方法2：初始化节点值、类型，并指定第一个子节点和下一个兄弟节点
     public RegexTreeNode(char v, int type, RegexTreeNode firstChild, RegexTreeNode nextSibling){
         super(firstChild, nextSibling);
         this.value = v;
@@ -56,8 +50,8 @@ public class RegexTreeNode extends DefaultTreeNode {
         return type;
     }
 
-    // 获取该节点的最后一个子节点
     public RegexTreeNode getLastChild() {
+
         RegexTreeNode theNode = (RegexTreeNode) this.getFirstChild();
         if (theNode != null) { //the firstChild is not the last child.
             while (theNode.getNextSibling() != null) {
@@ -67,13 +61,6 @@ public class RegexTreeNode extends DefaultTreeNode {
         return theNode;
     }
 
-    public boolean isFull() {
-        return isFull;
-    }
-
-    public void setFull(boolean full) {
-        isFull = full;
-    }
 
     @Override
     public String toString() {
