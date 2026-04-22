@@ -18,7 +18,7 @@ public class ThompsonConstruction {
 
         TNFA tnfa=new TNFA();
         //Add your implementation
-       tnfa=build(node);
+        tnfa=build(node);
 
         return tnfa;
     }

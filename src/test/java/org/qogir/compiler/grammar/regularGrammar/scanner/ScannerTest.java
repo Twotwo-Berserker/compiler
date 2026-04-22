@@ -1,6 +1,12 @@
 package org.qogir.compiler.grammar.regularGrammar.scanner;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.junit.Test;
 import org.qogir.compiler.grammar.regularGrammar.RDFA;
@@ -34,13 +40,28 @@ public class ScannerTest {
         System.out.println(scanner.constructDFA(tnfa).toString());
     }
 
-    public static void main(String[] args) {
+    public static  String[] readRegexFromTxt(String filePath) throws IOException {
+        File file = new File(filePath);
+        List<String> regexList = new ArrayList<>();
+        
+        // 按行读取文件
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                // 跳过空行和注释行（可选，根据需求调整）
+                line = line.trim();
+                if (!line.isEmpty() && !line.startsWith("//")) {
+                    regexList.add(line);
+                }
+            }
+        }
+        
+        // 转换为数组返回
+        return regexList.toArray(new String[0]);
+    }
 
-
-    String[] regexes = new String[]{
-        "regex0 := abc",
-        //"regex0 := c(a|b)*"
-    };//"regex1 := c(a|b)*","regex2 := d(f|ea*(g|h))b","c(a|b)*","a|b", "ab*", "d(f|e)","d(f|ea*(g|h))b","c(a|b)*"
+    public static void main(String[] args) throws IOException {
+        String[] regexes = readRegexFromTxt("test.txt");
 
         //test defining a regular grammar
         RegularGrammar rg = new RegularGrammar(regexes);
@@ -76,6 +97,7 @@ public class ScannerTest {
 
         //test building a grammar for the grammar
         Scanner scanner = new Scanner(rg);
+        System.out.println("Show the NFA:");
         TNFA tnfa = scanner.constructNFA();
         System.out.println("Show the minimizeDFA:");
         System.out.println(tnfa);
