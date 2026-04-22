@@ -1,12 +1,7 @@
 package org.qogir.compiler.grammar.regularGrammar.scanner;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import org.junit.Test;
 import org.qogir.compiler.grammar.regularGrammar.RDFA;
@@ -18,6 +13,7 @@ import org.qogir.simulation.logger.StateMinLogger;
 import org.qogir.simulation.logger.SubsetConsLogger;
 import org.qogir.simulation.logger.ThompsonLogger;
 import org.qogir.simulation.scanner.Scanner;
+import org.qogir.simulation.util.FileUtils;
 import org.qogir.simulation.util.StateMini;
 
 import com.alibaba.fastjson.JSON;
@@ -40,28 +36,8 @@ public class ScannerTest {
         System.out.println(scanner.constructDFA(tnfa).toString());
     }
 
-    public static  String[] readRegexFromTxt(String filePath) throws IOException {
-        File file = new File(filePath);
-        List<String> regexList = new ArrayList<>();
-        
-        // 按行读取文件
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                // 跳过空行和注释行（可选，根据需求调整）
-                line = line.trim();
-                if (!line.isEmpty() && !line.startsWith("//")) {
-                    regexList.add(line);
-                }
-            }
-        }
-        
-        // 转换为数组返回
-        return regexList.toArray(new String[0]);
-    }
-
     public static void main(String[] args) throws IOException {
-        String[] regexes = readRegexFromTxt("test.txt");
+        String[] regexes = FileUtils.readRegexFromTxt("test.txt");
 
         //test defining a regular grammar
         RegularGrammar rg = new RegularGrammar(regexes);
