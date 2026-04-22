@@ -218,7 +218,7 @@ public class ParseRegex {
                 stack.push(bnode);
             }
             else {
-                System.out.println("not a legal regex!(It contains illegal character");
+                System.out.println("not a legal regex!(It contains illegal character)");
                 return null;
             }//+++++++++
 

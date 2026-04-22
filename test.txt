@@ -8,3 +8,7 @@ regex2 := (a|b)c*
 // 复杂的正则表达式
 regex3 := a|ε
 regex4 := (c(a|b)*)*(d|ε)f*c
+
+// 错误示范
+regex5 := ((a|b)*
+regex6 := a+b
