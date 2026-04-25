@@ -1,1 +1,7 @@
-(src/main/java/org/qogir/compiler/grammar/regularGrammar/StateMinimization.java, src/main/java/org/qogir/compiler/grammar/regularGrammar/SubsetConstruction.java)
+```
+# Compiled and build artifacts
+*.class
+target/
+# Test reports
+target/surefire-reports/
+```

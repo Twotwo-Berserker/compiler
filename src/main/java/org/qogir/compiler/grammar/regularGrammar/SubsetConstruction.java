@@ -116,7 +116,7 @@ public class SubsetConstruction {
         Queue<HashMap<Integer, State>> worklist = new LinkedList<>();
         
         // Step 1: Compute the epsilon closure of the NFA start state
-        HashMap<Integer, State> startNfaSet = epsilonClosure(epsilonClosures(tnfa.getStartState(), nfaTable), nfaTable);
+        HashMap<Integer, State> startNfaSet = epsilonClosures(tnfa.getStartState(), nfaTable);
         
         // Create the DFA start state
         State dfaStart = new State();
@@ -172,8 +172,11 @@ public class SubsetConstruction {
             }
         }
         
+        // Renumber DFA state SIDs to be sequential starting from 0
+        dfa.renumberSID();
+        
         // Print the transition table
-        System.out.println("Start State:" + dfa.getStartState().getId());
+        System.out.println("Start State:" + dfa.getStartState().getSid());
         System.out.println("the transitTable is:");
         for (LabelEdge edge : dfa.getTransitTable().edgeSet()) {
             System.out.println("(" + edge.toString() + ")");
