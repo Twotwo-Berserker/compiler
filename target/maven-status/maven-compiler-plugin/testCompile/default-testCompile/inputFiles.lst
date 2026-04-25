@@ -1,0 +1,4 @@
+/workspace/src/test/java/org/qogir/compiler/grammar/regularGrammar/scanner/ScannerTest.java
+/workspace/src/test/java/org/qogir/compiler/grammar/regularGrammar/scanner/ScanWithFA_Test.java
+/workspace/src/test/java/org/qogir/compiler/grammar/regularGrammar/scanner/ConstructionLoggerTest.java
+/workspace/src/test/java/org/qogir/compiler/grammar/regularGrammar/scanner/MiscTest.java
