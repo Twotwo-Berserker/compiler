@@ -99,11 +99,13 @@ public class Scanner {
     public TNFA constructRegexNFA(Regex r) {
         RegexTree tree = constructRegexTree(r);
         ThompsonConstruction thompsonConstruction = new ThompsonConstruction();
-        TNFA nfa = thompsonConstruction.translate(tree.getRoot(), tree.getRoot());
+        if(tree !=null){
+            TNFA nfa = thompsonConstruction.translate(tree.getRoot());
+            setAlphabetForNfa(r, nfa);
+            return nfa;
 
-        setAlphabetForNfa(r, nfa);
-
-        return nfa;
+        }
+        return null;
     }
 
     public void setAlphabetForNfa(Regex r, TNFA nfa) {
@@ -204,7 +206,9 @@ public class Scanner {
             TNFA nfa = constructRegexNFA(r);
             if(nfa != null)
                 this.RegexToNFA.put(r, nfa);
-            nfa.setAlphabet(rg.getSymbols());
+            if (nfa != null) {
+                nfa.setAlphabet(rg.getSymbols());
+            }
             return nfa;
         }
         else if(rg.getPatterns().size() > 1) {
@@ -215,6 +219,7 @@ public class Scanner {
             }
             TNFA nfa = new TNFA();
             for (TNFA tn : this.RegexToNFA.values()) {
+                if(tn == null) continue;
                 if(tn.getStartState().getType() != State.ACCEPTANDSTART){
                     tn.getStartState().setType(State.MIDDLE);
                 }

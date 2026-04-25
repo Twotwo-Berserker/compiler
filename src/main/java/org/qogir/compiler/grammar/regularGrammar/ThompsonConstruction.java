@@ -13,41 +13,36 @@ import com.alibaba.fastjson.asm.Label;
 
 public class ThompsonConstruction {
 
-    public TNFA translate(RegexTreeNode node, RegexTreeNode root) {
+    public TNFA translate(RegexTreeNode node) {
         if (node == null) return null;
 
-        TNFA tnfa=new TNFA();
         //Add your implementation
-        tnfa=build(node);
-
-        return tnfa;
+        return build(node);
     }
+
     private TNFA build(RegexTreeNode node) {
-        switch (node.getType()) {
-            case 0: // 基本字符
-                return buildBasic(node);
-            case 1: // 连接（多个子表达式）
-                return buildConcat(node);
-            case 2: // 并集（多个分支）
-                return buildUnion(node);
-            case 3: // 闭包
-                return buildStar(node);
-            default:
-                throw new IllegalArgumentException("Unsupported node type: " + node.getType());
-        }
+        return switch (node.getType()) {
+            case 0 -> // 基本字符
+                    buildBasic(node);
+            case 1 -> // 连接（多个子表达式）
+                    buildConcat(node);
+            case 2 -> // 并集（多个分支）
+                    buildUnion(node);
+            case 3 -> // 闭包
+                    buildStar(node);
+            default -> throw new IllegalArgumentException("Unsupported node type: " + node.getType());
+        };
     }
 
     // 基本字符：a 或 ε
     private TNFA buildBasic(RegexTreeNode node) {
+        TNFA tnfa = new TNFA();        // 使用外部接受状态构造 TNFA
         char ch = node.getValue();
-        State start = new State();          // 新建起始状态
-        State accept = new State();          // 新建接受状态
-        accept.setType(State.ACCEPT);
-        start.setType(State.START);
+        State start = tnfa.getStartState();
+        State accept = tnfa.getAcceptingState();
 
-        TNFA tnfa = new TNFA(accept);        // 使用外部接受状态构造 TNFA
-        tnfa.setStartState(start);
         tnfa.getTransitTable().addVertex(start);
+
 
         // 添加转移边：起始 -> 接受
         tnfa.getTransitTable().addEdge(start, accept, ch);
@@ -80,13 +75,10 @@ public class ThompsonConstruction {
 
     // 并集：并联所有分支（如 a|b|c）
     private TNFA buildUnion(RegexTreeNode node) {
-        State newStart = new State();
-        State newAccept = new State();
-        newAccept.setType(State.ACCEPT);
-        newStart.setType(State.START);
+        TNFA result = new TNFA();
+        State newStart = result.getStartState();
+        State newAccept = result.getAcceptingState();
         
-        TNFA result = new TNFA(newAccept);
-        result.setStartState(newStart);
         result.getTransitTable().addVertex(newStart);
         result.getTransitTable().addVertex(newAccept);
 
@@ -109,16 +101,11 @@ public class ThompsonConstruction {
     private TNFA buildStar(RegexTreeNode node) {
         RegexTreeNode innerNode = (RegexTreeNode)node.getFirstChild();
         if (innerNode == null) return null;
-
         TNFA inner = build(innerNode);
-        State newStart = new State();
-        State newAccept = new State();
-        newAccept.setType(State.ACCEPT);
-        
-        newStart.setType(State.START);
 
-        TNFA result = new TNFA(newAccept);
-        result.setStartState(newStart);
+        TNFA result = new TNFA();
+        State newStart = result.getStartState();
+        State newAccept = result.getAcceptingState();
         result.getTransitTable().addVertex(newStart);
         result.getTransitTable().addVertex(newAccept);
 
@@ -147,6 +134,7 @@ public class ThompsonConstruction {
             if (!destGraph.containsVertex(s)) {
                 destGraph.addVertex(s);
             }
+            // dest提供新起始状态，src的起始状态更新为普通状态
             if(s.getType()==State.START)s.setType(State.MIDDLE);
         }
         // 合并边

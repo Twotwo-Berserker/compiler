@@ -49,7 +49,7 @@ public class ScannerTest {
         //test constructing the regex tree
         System.out.println(scanner.constructRegexTrees().toString());
 
-        //System.out.println("Show the NFA:");
+        System.out.println("Show the NFA:");
         //test constructing the NFA
         System.out.println(scanner.constructNFA().toString());
 

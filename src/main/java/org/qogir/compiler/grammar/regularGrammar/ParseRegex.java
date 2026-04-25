@@ -1,6 +1,8 @@
 package org.qogir.compiler.grammar.regularGrammar;
 
+import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Optional;
 import java.util.Stack;
 
 /**
@@ -45,12 +47,7 @@ public class ParseRegex {
      * @author xuyang
      */
     public RegexTree parse() {
-
-        //Add your implementation :只发现|结尾有bug
-        //Some error handling code has already been implemented here, but it's incomplete.
-        //Please complete the implementation.
-        //You can also choose to remove the existing error handling code and implement it from scratch instead.
-
+        //Add your implementation
         if (this.queue.isEmpty())
             return null;
 
@@ -60,12 +57,12 @@ public class ParseRegex {
 
         Stack<RegexTreeNode> stack = new Stack<>();
         //lookahead char
-        char look = this.queue.poll();
+        char look = Optional.ofNullable(this.queue.poll()).orElse(' ');
         short countleft=0;
 
         if (!Character.isLetter(look) && look != '(' && !Character.isDigit(look)) { //look != 'ε' &&
             //The first char must be a letter, ε or '('
-            System.out.println("not a legal regex!(It must begin with a letter,ε or (,)");
+            System.out.println("not a legal regex!It must begin with a letter,digit,ε or (");
             return null;
         } else if (look == '%') {
             System.out.println("a NULL regex!");
@@ -82,7 +79,7 @@ public class ParseRegex {
         RegexTreeNode node = new RegexTreeNode(look, t, null, null);
         stack.push(node);
 
-        look = this.queue.poll();
+        look = Optional.ofNullable(this.queue.poll()).orElse(' ');
         while (look != '%') {
             if (look == '*') {
                 RegexTreeNode knode;
@@ -121,7 +118,7 @@ public class ParseRegex {
                         if (stack.peek().getType() == 0 || stack.peek().getType() == 1 || stack.peek().getType() == 3) {//basic,kleene or concatenation(the case of conca exist?)
                             rstack.push(stack.pop());
                         } else if (stack.peek().getType() == 2) {//union, case (stack|?)
-                            if (rstack.size() == 0) { //case (stack|)
+                            if (rstack.isEmpty()) { //case (stack|)
                                 System.out.println("not a legal regex '|)'");
                                 return null;
                             }
@@ -145,7 +142,7 @@ public class ParseRegex {
                     }
 
                     if (stack.isEmpty()) {
-                        System.out.println("not a legal regex ('(' is missing.)");
+                        System.out.println("not a legal regex!('(' is missing.)");
                         return null;
                     } else if (stack.peek().getType() == 4) { //case (rstack)
                         // 1) convert the nodes in rstack into one node
@@ -170,7 +167,7 @@ public class ParseRegex {
             else if (look == '|') {
                 t = stack.peek().getType();
                 if (t == 4 || t == 2) {
-                    System.out.println("not a legal regex('(| or ||')");
+                    System.out.println("not a legal regex!('(|' or '||')");
                     return null;
                 }
 
@@ -196,7 +193,7 @@ public class ParseRegex {
                         cnode = mergeStackAsOneChild(cnode, ustack);
                         firstChildNode = cnode;
                     } else {
-                        System.out.println("not a legal regex(in considering look='|')");
+                        System.out.println("not a legal regex!(in considering look='|')");
                         return null;
                     }
                     unode.setFirstChild(firstChildNode);
@@ -222,7 +219,7 @@ public class ParseRegex {
                 return null;
             }//+++++++++
 
-            look = this.queue.poll();
+            look = Optional.ofNullable(this.queue.poll()).orElse(' ');
         }
 
         //if look == '%'
@@ -230,7 +227,7 @@ public class ParseRegex {
             System.out.println("missing ')'");
             return null;
         }
-        if(this.queue.size()!=0){
+        if(!this.queue.isEmpty()){
             System.out.println("not a legal regex!(It contains illegal character)");
             return null;
         }//++++
@@ -241,7 +238,7 @@ public class ParseRegex {
         while (!stack.isEmpty() && stack.peek().getType() != 2) {
             pstack.push(stack.pop());
         }
-        if(pstack.size()==0){
+        if(pstack.isEmpty()){
             System.out.println("not a legal regex!(It can't end with |)");
             return null;
         }
