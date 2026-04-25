@@ -2,9 +2,8 @@
 // 每行定义一个正则表达式，格式为：正则名 := 正则表达式
 
 // 合法正则表达式测试
-// regex1 := c(a|b)*
-regex := ab | bb | a
-// regex2 := (a|ε)bc*
+regex1 := c(a|b)*
+// regex2 := ab | bb | a
 
 // 非法正则表达式测试（闭包前为并集）
 // regex_err1 := (a|b)*c|

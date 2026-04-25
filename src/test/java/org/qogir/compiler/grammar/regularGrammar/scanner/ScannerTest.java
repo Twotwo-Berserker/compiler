@@ -42,9 +42,10 @@ public class ScannerTest {
         RegularGrammar rg = new RegularGrammar(regexes);
         System.out.println(rg);
 
-        System.out.println("Show the RegexTree:");
+        System.out.println("\nShow the RegexTree:");
         Scanner scanner = new Scanner(rg);
         System.out.println(scanner.constructRegexTrees().toString());
+        System.out.println();
 
         System.out.println("Show the NFA:");
         TNFA tnfa = scanner.constructNFA();

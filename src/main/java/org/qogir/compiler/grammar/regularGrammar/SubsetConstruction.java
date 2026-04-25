@@ -8,43 +8,38 @@ import org.qogir.simulation.logger.SubsetConsLogger;
 import java.util.*;
 
 /**
- * The subset construction Algorithm for converting an NFA to a DFA.
- * The subset construction Algorithm takes an NFA N as input and output a DFA D accepting the same language as N.
- * The main mission is to eliminate ε-transitions and multi-transitions in NFA and construct a transition table for D.
- * The algorithm can be referred to {@see }
+ * 子集构造算法：将NFA转换为等价的DFA
+ * 核心目标：消除NFA的ε-转移（空转移）和多转移特性，生成满足DFA定义的转移表
  */
 public class SubsetConstruction {
 
     /**
-     * Eliminate all ε-transitions reachable from a single state in NFA through the epsilon closure operation.
-     * @param s a single state of NFA
-     * @param tb the transition table of NFA
-     * @return a set of state reachable from the state s on ε-transition
-     * @author xuyang
+     * 单状态的ε-闭包：求从单个NFA状态出发，仅通过ε-转移能到达的所有状态
+     * @param s NFA的单个状态
+     * @param tb NFA的转移表（有向带标签图）
+     * @return 该状态的ε-闭包状态集合（Key：状态ID，Value：状态对象）
      */
     private HashMap<Integer, State> epsilonClosures(State s, LabeledDirectedGraph<State> tb){
-        if (!tb.vertexSet().contains(s)) { //if vertex s not in the transition table
+        if (!tb.vertexSet().contains(s)) { // 若状态不在转移表中，返回null
             return null;
         }
 
         HashMap<Integer,State> nfaStates = new HashMap<>();
-        
-        // Use BFS to find all states reachable via ε-transitions
+        // 广度优先搜索（BFS）遍历所有ε-可达状态
         Queue<State> queue = new LinkedList<>();
         Set<State> visited = new HashSet<>();
-        
-        queue.offer(s);
+
+        queue.offer(s); // 初始状态入队
         visited.add(s);
         nfaStates.put(s.getId(), s);
-        
+
         while (!queue.isEmpty()) {
             State current = queue.poll();
-            
-            // Find all ε-transitions from current state
+            // 遍历当前状态的所有出边，筛选ε-转移边
             for (LabelEdge edge : tb.edgeSet()) {
                 if (edge.getSource().equals(current) && edge.getLabel() == 'ε') {
                     State target = (State) edge.getTarget();
-                    if (!visited.contains(target)) {
+                    if (!visited.contains(target)) { // 避免重复访问
                         visited.add(target);
                         queue.offer(target);
                         nfaStates.put(target.getId(), target);
@@ -52,136 +47,157 @@ public class SubsetConstruction {
                 }
             }
         }
-
         return nfaStates;
     }
 
     /**
-     * Eliminate all ε-transitions reachable from a  state set in NFA through the epsilon closure operation
-     * @param ss a state set of NFA
-     * @param tb the transition table of NFA
-     * @return a set of state reachable from the state set on ε-transition
-     * @author xuyang
+     * 状态集合的ε-闭包：求从一组NFA状态出发，仅通过ε-转移能到达的所有状态
+     * @param ss NFA的状态集合
+     * @param tb NFA的转移表
+     * @return 该状态集合的ε-闭包
      */
-
     public HashMap<Integer, State> epsilonClosure(HashMap<Integer, State> ss, LabeledDirectedGraph<State> tb){
         HashMap<Integer,State> nfaStates = new HashMap<>();
         for(State s : ss.values()){
+            // 合并每个单状态的ε-闭包
             nfaStates.putAll(epsilonClosures(s,tb));
         }
         return nfaStates;
     }
 
     /**
-     *
-     * @param s
-     * @param ch
-     * @param tb
-     * @return
+     * 单状态的move操作：求从单个NFA状态出发，通过输入字符ch转移能到达的所有状态（无ε-转移）
+     * @param s NFA单个状态
+     * @param ch 输入字符
+     * @param tb NFA转移表
+     * @return move操作结果集合
      */
     private HashMap<Integer,State> moves(State s, Character ch, LabeledDirectedGraph<State> tb){
         HashMap<Integer,State> nfaStates = new HashMap<>();
-
-        // Find all states reachable from state s on input character ch
+        // 遍历所有边，筛选“当前状态+指定字符”的转移边
         for (LabelEdge edge : tb.edgeSet()) {
             if (edge.getSource().equals(s) && edge.getLabel() == ch) {
                 State target = (State) edge.getTarget();
                 nfaStates.put(target.getId(), target);
             }
         }
-
         return nfaStates;
     }
 
+    /**
+     * 状态集合的move操作：求从一组NFA状态出发，通过输入字符ch转移能到达的所有状态（无ε-转移）
+     * @param ss NFA状态集合
+     * @param ch 输入字符
+     * @param tb NFA转移表
+     * @return move操作结果集合
+     */
     public HashMap<Integer,State> move(HashMap<Integer, State> ss, Character ch, LabeledDirectedGraph<State> tb){
         HashMap<Integer,State> nfaStates = new HashMap<>();
         for(State s : ss.values()){
+            // 合并每个单状态的move结果
             nfaStates.putAll(moves(s,ch,tb));
         }
         return nfaStates;
     }
 
+    /**
+     * 组合操作：先执行move，再执行ε-闭包（子集构造的核心操作）
+     * @param sSet NFA状态集合
+     * @param ch 输入字符
+     * @param tb NFA转移表
+     * @return move+ε-闭包的最终状态集合
+     */
     public HashMap<Integer,State> epsilonClosureWithMove(HashMap<Integer, State> sSet, Character ch, LabeledDirectedGraph<State> tb){
         HashMap<Integer,State> states = new HashMap<>();
+        // 先move：按字符转移；再ε-闭包：补全所有ε-可达状态
         states.putAll(epsilonClosure(move(sSet, ch, tb),tb));
         return states;
     }
+
+    /**
+     * 子集构造主流程：将TNFA（带ε的NFA）转换为RDFA（简化DFA）
+     * @param tnfa 输入的NFA（含ε-转移）
+     * @return 等价的DFA
+     */
     public RDFA subSetConstruct(TNFA tnfa){
         RDFA dfa = new RDFA();
-        LabeledDirectedGraph<State> nfaTable = tnfa.getTransitTable();
-        ArrayList<Character> alphabet = tnfa.getAlphabet();
-        
-        // Map to track processed DFA states and their corresponding NFA state sets
+        LabeledDirectedGraph<State> nfaTable = tnfa.getTransitTable(); // NFA转移表
+        ArrayList<Character> alphabet = tnfa.getAlphabet(); // NFA的输入字母表
+
+        // 映射：NFA状态集合 → 对应的DFA状态（核心映射，解决“DFA状态对应NFA状态子集”的问题）
         HashMap<HashMap<Integer, State>, State> nfaSetToDfaState = new HashMap<>();
+        // 工作队列：待处理的NFA状态集合（BFS遍历所有可能的DFA状态）
         Queue<HashMap<Integer, State>> worklist = new LinkedList<>();
-        
-        // Step 1: Compute the epsilon closure of the NFA start state
+
+        // 步骤1：初始化DFA起始状态（NFA起始状态的ε-闭包）
         HashMap<Integer, State> startNfaSet = epsilonClosures(tnfa.getStartState(), nfaTable);
-        
-        // Create the DFA start state
         State dfaStart = new State();
-        dfaStart.setType(State.START);
+        dfaStart.setType(State.START); // 标记为DFA起始状态
         dfa.setStartState(dfaStart);
-        dfa.getTransitTable().addVertex(dfaStart);
-        dfa.setStateMappingBetweenDFAAndNFA(dfaStart, startNfaSet);
+        dfa.getTransitTable().addVertex(dfaStart); // 将起始状态加入DFA转移表
+        dfa.setStateMappingBetweenDFAAndNFA(dfaStart, startNfaSet); // 记录DFA状态与NFA子集的映射
         nfaSetToDfaState.put(startNfaSet, dfaStart);
-        worklist.offer(startNfaSet);
-        
-        // Print initial DFA state
+        worklist.offer(startNfaSet); // 初始状态集合入队
+
+        // 打印初始DFA状态（调试用）
         if (startNfaSet != null) {
             System.out.println("DFA State:" + dfaStart.getSid() + ":" + dfaStart.getType() + " NFA State set: " + formatStateSet(startNfaSet));
         }
 
-        int dfaStateCounter = 1;
-        
-        // Step 2: Process the worklist
+        int dfaStateCounter = 1; // DFA状态ID计数器
+
+        // 步骤2：处理工作队列，生成所有DFA状态和转移
         while (!worklist.isEmpty()) {
-            HashMap<Integer, State> currentNfaSet = worklist.poll();
-            State currentDfaState = nfaSetToDfaState.get(currentNfaSet);
-            
-            // For each input symbol in the alphabet
+            HashMap<Integer, State> currentNfaSet = worklist.poll(); // 当前处理的NFA子集
+            State currentDfaState = nfaSetToDfaState.get(currentNfaSet); // 对应的DFA状态
+
+            // 遍历字母表中的每个字符，生成DFA转移
             for (Character ch : alphabet) {
-                // Compute epsilon-closure(move(currentNfaSet, ch))
+                // 计算：ε-closure(move(当前NFA子集, ch)) → 下一个NFA子集
                 HashMap<Integer, State> nextNfaSet = epsilonClosureWithMove(currentNfaSet, ch, nfaTable);
-                
-                if (nextNfaSet.isEmpty()) {
+
+                if (nextNfaSet.isEmpty()) { // 无转移，跳过
                     continue;
                 }
-                
-                // Check if this NFA set already has a corresponding DFA state
+
+                // 检查该NFA子集是否已对应DFA状态
                 State nextDfaState;
                 if (!nfaSetToDfaState.containsKey(nextNfaSet)) {
-                    // Create a new DFA state
+                    // 未存在：创建新的DFA状态
                     nextDfaState = new State();
+                    // 标记状态类型：若NFA子集含接受态，则DFA状态为接受态
                     int type = containsAcceptingState(nextNfaSet) ? State.ACCEPT : State.MIDDLE;
                     nextDfaState.setType(type);
-                    dfa.getTransitTable().addVertex(nextDfaState);
-                    dfa.setStateMappingBetweenDFAAndNFA(nextDfaState, nextNfaSet);
+                    dfa.getTransitTable().addVertex(nextDfaState); // 加入DFA转移表
+                    dfa.setStateMappingBetweenDFAAndNFA(nextDfaState, nextNfaSet); // 记录映射
                     nfaSetToDfaState.put(nextNfaSet, nextDfaState);
-                    worklist.offer(nextNfaSet);
-                    
-                    // Print new DFA state
+                    worklist.offer(nextNfaSet); // 新状态子集入队待处理
+
+                    // 打印新DFA状态（调试用）
                     System.out.println("DFA State:" + nextDfaState.getSid() + ":" + nextDfaState.getType() + " NFA State set: " + formatStateSet(nextNfaSet));
                 } else {
+                    // 已存在：复用已有DFA状态
                     nextDfaState = nfaSetToDfaState.get(nextNfaSet);
                 }
-                
-                // Add transition from currentDfaState to nextDfaState on symbol ch
+
+                // 为DFA添加转移边：当前DFA状态 → 下一个DFA状态，输入字符ch
                 dfa.getTransitTable().addEdge(currentDfaState, nextDfaState, ch);
-                
-                // Log the transition
+
+                // 记录转移日志（调试/可视化用）
                 SubsetConsLogger.getSubsetConsLogger(dfa, ch, currentDfaState, nextNfaSet);
             }
         }
-        
-        // Renumber DFA state SIDs to be sequential starting from 0
+
+        // 重新编号DFA状态ID（保证ID从0开始连续）
         dfa.renumberSID();
-        
+
         return dfa;
     }
-    
+
     /**
-     * Check if a set of NFA states contains an accepting state
+     * 检查NFA状态集合是否包含接受态
+     * @param nfaSet NFA状态集合
+     * @return 包含接受态返回true，否则false
      */
     private boolean containsAcceptingState(HashMap<Integer, State> nfaSet) {
         for (State s : nfaSet.values()) {
@@ -191,16 +207,18 @@ public class SubsetConstruction {
         }
         return false;
     }
-    
+
     /**
-     * Format a state set for display
+     * 格式化状态集合为字符串（调试打印用）
+     * @param nfaSet NFA状态集合
+     * @return 形如 {0,1,2} 的字符串
      */
     private String formatStateSet(HashMap<Integer, State> nfaSet) {
         if (nfaSet.isEmpty()) {
             return "{}";
         }
         List<Integer> ids = new ArrayList<>(nfaSet.keySet());
-        Collections.sort(ids);
+        Collections.sort(ids); // 排序保证输出有序
         StringBuilder sb = new StringBuilder("{");
         for (int i = 0; i < ids.size(); i++) {
             sb.append(ids.get(i));
@@ -211,5 +229,4 @@ public class SubsetConstruction {
         sb.append("}");
         return sb.toString();
     }
-
 }
