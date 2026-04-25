@@ -200,7 +200,6 @@ public class StateMinimization {
         }
 
         // 步骤3：为每个等价组创建最小DFA的状态
-        int minStateId = 0;
         for (Integer gId : groupSet.keySet()) {
             HashMap<Integer, State> group = groupSet.get(gId);
 
@@ -260,28 +259,4 @@ public class StateMinimization {
         return minDfa;
     }
 
-    /**
-     * 将状态组集合转换为字符串（备用调试方法）
-     */
-    private String GroupSetToString(HashMap<Integer,HashMap<Integer, State>> GroupSet){
-        StringBuilder str = new StringBuilder();
-        for( Integer g: GroupSet.keySet()){
-            String tmp = GroupToString(GroupSet.get(g));
-            str.append(g).append(":").append(tmp).append("\t");
-        }
-        return str.toString();
-    }
-
-    /**
-     * 将单个状态组转换为字符串（备用调试方法）
-     */
-    private String GroupToString(HashMap<Integer, State> group){
-        StringBuilder str = new StringBuilder();
-        for(Integer k : group.keySet()){
-            str.append(group.get(k).getId()).append(":").append(group.get(k).getType()).append(",");
-        }
-        if(!str.isEmpty()) str = new StringBuilder(str.substring(0, str.length() - 1)); // 移除最后一个逗号
-        str = new StringBuilder("{" + str + "}");
-        return str.toString();
-    }
 }

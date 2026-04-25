@@ -139,8 +139,6 @@ public class SubsetConstruction {
         nfaSetToDfaState.put(startNfaSet, dfaStart);
         worklist.offer(startNfaSet); // 初始状态集合入队
 
-        int dfaStateCounter = 1; // DFA状态ID计数器
-
         // 步骤2：处理工作队列，生成所有DFA状态和转移
         while (!worklist.isEmpty()) {
             HashMap<Integer, State> currentNfaSet = worklist.poll(); // 当前处理的NFA子集

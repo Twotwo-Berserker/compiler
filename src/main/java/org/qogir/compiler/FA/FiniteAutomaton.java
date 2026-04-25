@@ -34,18 +34,16 @@ public class FiniteAutomaton implements Serializable {
         }
     }
 
-    public void setAlphabet(ArrayList<Character> alphabet) {
-        this.alphabet = alphabet;
-    }
-
     public ArrayList<Character> getAlphabet() {
         return alphabet;
+    }
+    public void setAlphabet(ArrayList<Character> alphabet) {
+        this.alphabet = alphabet;
     }
 
     public State getStartState() {
         return startState;
     }
-
     public void setStartState(State startState) {
         this.startState = startState;
     }
@@ -58,7 +56,7 @@ public class FiniteAutomaton implements Serializable {
     public String toString() {
         StringBuilder faInfo = new StringBuilder();
         int num = transitTable.edgeSet().size();
-        faInfo.append("Alphabet:").append(this.alphabet.toString()).append("\n").append("Total edges:").append(num).append("\n").append("Start State:").append(this.startState.getId()).append("\n").append("the transitTable is: \n");
+        faInfo.append("Alphabet:").append(this.alphabet.toString()).append("\n").append("Total edges:").append(num).append("\n").append("Start State:").append(this.startState.getSid()).append("\n").append("the transitTable is: \n");
         for (LabelEdge edge : transitTable.edgeSet()){
             faInfo.append("(").append(edge.toString()).append(")\n") ;
         }
