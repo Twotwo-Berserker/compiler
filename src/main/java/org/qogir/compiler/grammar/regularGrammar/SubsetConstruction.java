@@ -128,8 +128,10 @@ public class SubsetConstruction {
         worklist.offer(startNfaSet);
         
         // Print initial DFA state
-        System.out.println("DFA State:" + dfaStart.getSid() + ":" + dfaStart.getType() + " NFA State set: " + formatStateSet(startNfaSet));
-        
+        if (startNfaSet != null) {
+            System.out.println("DFA State:" + dfaStart.getSid() + ":" + dfaStart.getType() + " NFA State set: " + formatStateSet(startNfaSet));
+        }
+
         int dfaStateCounter = 1;
         
         // Step 2: Process the worklist
@@ -174,13 +176,6 @@ public class SubsetConstruction {
         
         // Renumber DFA state SIDs to be sequential starting from 0
         dfa.renumberSID();
-        
-        // Print the transition table
-        System.out.println("Start State:" + dfa.getStartState().getSid());
-        System.out.println("the transitTable is:");
-        for (LabelEdge edge : dfa.getTransitTable().edgeSet()) {
-            System.out.println("(" + edge.toString() + ")");
-        }
         
         return dfa;
     }

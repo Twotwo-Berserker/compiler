@@ -3,11 +3,14 @@
 
 // 合法正则表达式测试
 regex1 := c(a|b)*
-regex2 := (a|ε)bc*
+
+// regex2 := (a|ε)bc*
 
 // 非法正则表达式测试（闭包前为并集）
-regex_err1 := (a|b)*c|
+// regex_err1 := (a|b)*c|
 // 非法符号测试
-regex_err2 := a#b*
+// regex_err2 := a#b*
 // 括号不匹配测试
-regex_err3 := (a|b)c*)
+// regex_err3 := (a|b)c*)
+
+// 能实现S := aT，T := a|b 的分析吗？
