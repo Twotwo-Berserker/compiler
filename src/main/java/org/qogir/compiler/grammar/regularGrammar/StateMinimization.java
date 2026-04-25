@@ -225,26 +225,26 @@ public class StateMinimization {
         
         // Renumber minimized DFA state SIDs to be sequential starting from 0
         minDfa.renumberSID();
-        
+        minDfa.getStartState().setType(State.START);
         return minDfa;
     }
 
     private String GroupSetToString(HashMap<Integer,HashMap<Integer, State>> GroupSet){
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for( Integer g: GroupSet.keySet()){
             String tmp = GroupToString(GroupSet.get(g));
-            str += g +  ":" + tmp + "\t" ;
+            str.append(g).append(":").append(tmp).append("\t");
         }
-        return str;
+        return str.toString();
     }
 
     private String GroupToString(HashMap<Integer, State> group){
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for(Integer k : group.keySet()){
-            str += group.get(k).getId() + ":" + group.get(k).getType() + ",";
+            str.append(group.get(k).getId()).append(":").append(group.get(k).getType()).append(",");
         }
-        if(str.length()!=0) str = str.substring(0,str.length()-1);
-        str = "{" + str + "}";
-        return str;
+        if(!str.isEmpty()) str = new StringBuilder(str.substring(0, str.length() - 1));
+        str = new StringBuilder("{" + str + "}");
+        return str.toString();
     }
 }
