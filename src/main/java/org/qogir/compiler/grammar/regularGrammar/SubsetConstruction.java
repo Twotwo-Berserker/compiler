@@ -3,10 +3,9 @@ package org.qogir.compiler.grammar.regularGrammar;
 import org.qogir.compiler.FA.State;
 import org.qogir.compiler.util.graph.LabelEdge;
 import org.qogir.compiler.util.graph.LabeledDirectedGraph;
+import org.qogir.simulation.logger.SubsetConsLogger;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * The subset construction Algorithm for converting an NFA to a DFA.
@@ -29,9 +28,30 @@ public class SubsetConstruction {
         }
 
         HashMap<Integer,State> nfaStates = new HashMap<>();
-
-        //Add your implementation
-
+        
+        // Use BFS to find all states reachable via ε-transitions
+        Queue<State> queue = new LinkedList<>();
+        Set<State> visited = new HashSet<>();
+        
+        queue.offer(s);
+        visited.add(s);
+        nfaStates.put(s.getId(), s);
+        
+        while (!queue.isEmpty()) {
+            State current = queue.poll();
+            
+            // Find all ε-transitions from current state
+            for (LabelEdge edge : tb.edgeSet()) {
+                if (edge.getSource().equals(current) && edge.getLabel() == 'ε') {
+                    State target = (State) edge.getTarget();
+                    if (!visited.contains(target)) {
+                        visited.add(target);
+                        queue.offer(target);
+                        nfaStates.put(target.getId(), target);
+                    }
+                }
+            }
+        }
 
         return nfaStates;
     }
@@ -62,7 +82,13 @@ public class SubsetConstruction {
     private HashMap<Integer,State> moves(State s, Character ch, LabeledDirectedGraph<State> tb){
         HashMap<Integer,State> nfaStates = new HashMap<>();
 
-        //Add your implementation
+        // Find all states reachable from state s on input character ch
+        for (LabelEdge edge : tb.edgeSet()) {
+            if (edge.getSource().equals(s) && edge.getLabel() == ch) {
+                State target = (State) edge.getTarget();
+                nfaStates.put(target.getId(), target);
+            }
+        }
 
         return nfaStates;
     }
@@ -81,9 +107,111 @@ public class SubsetConstruction {
         return states;
     }
     public RDFA subSetConstruct(TNFA tnfa){
-
-        //Add your implementation
-        return null;
+        RDFA dfa = new RDFA();
+        LabeledDirectedGraph<State> nfaTable = tnfa.getTransitTable();
+        ArrayList<Character> alphabet = tnfa.getAlphabet();
+        
+        // Map to track processed DFA states and their corresponding NFA state sets
+        HashMap<HashMap<Integer, State>, State> nfaSetToDfaState = new HashMap<>();
+        Queue<HashMap<Integer, State>> worklist = new LinkedList<>();
+        
+        // Step 1: Compute the epsilon closure of the NFA start state
+        HashMap<Integer, State> startNfaSet = epsilonClosure(epsilonClosures(tnfa.getStartState(), nfaTable), nfaTable);
+        
+        // Create the DFA start state
+        State dfaStart = new State();
+        dfaStart.setType(State.START);
+        dfa.setStartState(dfaStart);
+        dfa.getTransitTable().addVertex(dfaStart);
+        dfa.setStateMappingBetweenDFAAndNFA(dfaStart, startNfaSet);
+        nfaSetToDfaState.put(startNfaSet, dfaStart);
+        worklist.offer(startNfaSet);
+        
+        // Print initial DFA state
+        System.out.println("DFA State:" + dfaStart.getSid() + ":" + dfaStart.getType() + " NFA State set: " + formatStateSet(startNfaSet));
+        
+        int dfaStateCounter = 1;
+        
+        // Step 2: Process the worklist
+        while (!worklist.isEmpty()) {
+            HashMap<Integer, State> currentNfaSet = worklist.poll();
+            State currentDfaState = nfaSetToDfaState.get(currentNfaSet);
+            
+            // For each input symbol in the alphabet
+            for (Character ch : alphabet) {
+                // Compute epsilon-closure(move(currentNfaSet, ch))
+                HashMap<Integer, State> nextNfaSet = epsilonClosureWithMove(currentNfaSet, ch, nfaTable);
+                
+                if (nextNfaSet.isEmpty()) {
+                    continue;
+                }
+                
+                // Check if this NFA set already has a corresponding DFA state
+                State nextDfaState;
+                if (!nfaSetToDfaState.containsKey(nextNfaSet)) {
+                    // Create a new DFA state
+                    nextDfaState = new State();
+                    int type = containsAcceptingState(nextNfaSet) ? State.ACCEPT : State.MIDDLE;
+                    nextDfaState.setType(type);
+                    dfa.getTransitTable().addVertex(nextDfaState);
+                    dfa.setStateMappingBetweenDFAAndNFA(nextDfaState, nextNfaSet);
+                    nfaSetToDfaState.put(nextNfaSet, nextDfaState);
+                    worklist.offer(nextNfaSet);
+                    
+                    // Print new DFA state
+                    System.out.println("DFA State:" + nextDfaState.getSid() + ":" + nextDfaState.getType() + " NFA State set: " + formatStateSet(nextNfaSet));
+                } else {
+                    nextDfaState = nfaSetToDfaState.get(nextNfaSet);
+                }
+                
+                // Add transition from currentDfaState to nextDfaState on symbol ch
+                dfa.getTransitTable().addEdge(currentDfaState, nextDfaState, ch);
+                
+                // Log the transition
+                SubsetConsLogger.getSubsetConsLogger(dfa, ch, currentDfaState, nextNfaSet);
+            }
+        }
+        
+        // Print the transition table
+        System.out.println("Start State:" + dfa.getStartState().getId());
+        System.out.println("the transitTable is:");
+        for (LabelEdge edge : dfa.getTransitTable().edgeSet()) {
+            System.out.println("(" + edge.toString() + ")");
+        }
+        
+        return dfa;
+    }
+    
+    /**
+     * Check if a set of NFA states contains an accepting state
+     */
+    private boolean containsAcceptingState(HashMap<Integer, State> nfaSet) {
+        for (State s : nfaSet.values()) {
+            if (s.getType() == State.ACCEPT || s.getType() == State.ACCEPTANDSTART) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Format a state set for display
+     */
+    private String formatStateSet(HashMap<Integer, State> nfaSet) {
+        if (nfaSet.isEmpty()) {
+            return "{}";
+        }
+        List<Integer> ids = new ArrayList<>(nfaSet.keySet());
+        Collections.sort(ids);
+        StringBuilder sb = new StringBuilder("{");
+        for (int i = 0; i < ids.size(); i++) {
+            sb.append(ids.get(i));
+            if (i < ids.size() - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
 }

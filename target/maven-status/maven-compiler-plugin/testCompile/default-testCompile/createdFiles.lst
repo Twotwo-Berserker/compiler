@@ -1,0 +1,4 @@
+org/qogir/compiler/grammar/regularGrammar/scanner/ScanWithFA_Test.class
+org/qogir/compiler/grammar/regularGrammar/scanner/MiscTest.class
+org/qogir/compiler/grammar/regularGrammar/scanner/ScannerTest.class
+org/qogir/compiler/grammar/regularGrammar/scanner/ConstructionLoggerTest.class
