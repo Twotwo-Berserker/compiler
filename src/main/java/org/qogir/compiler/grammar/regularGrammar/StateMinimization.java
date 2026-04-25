@@ -47,7 +47,6 @@ public class StateMinimization {
         StateMinLogger logger = new StateMinLogger();
         logger.setFirstTwoSteps(groupSet);
 
-        System.out.println("GroupSet.size:" + groupSet.size());
         printGroupSet(0, groupSet, "initial split"); // 打印初始划分
 
         // 步骤2：迭代求精划分（直到无法再划分）
@@ -110,6 +109,8 @@ public class StateMinimization {
             }
         }
 
+        System.out.println("GroupSet.size:" + groupSet.size());
+
         return groupSet;
     }
 
@@ -168,7 +169,7 @@ public class StateMinimization {
     private String formatGroup(HashMap<Integer, State> group) {
         List<String> stateStrs = new ArrayList<>();
         for (State s : group.values()) {
-            stateStrs.add(s.getId() + ":" + s.getType());
+            stateStrs.add(s.getSid() + ":" + s.getType());
         }
         Collections.sort(stateStrs); // 排序保证输出有序
         return "{" + String.join(",", stateStrs) + "}";
