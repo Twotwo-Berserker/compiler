@@ -139,11 +139,6 @@ public class SubsetConstruction {
         nfaSetToDfaState.put(startNfaSet, dfaStart);
         worklist.offer(startNfaSet); // 初始状态集合入队
 
-        // 打印初始DFA状态（调试用）
-        if (startNfaSet != null) {
-            System.out.println("DFA State:" + dfaStart.getSid() + ":" + dfaStart.getType() + " NFA State set: " + formatStateSet(startNfaSet));
-        }
-
         int dfaStateCounter = 1; // DFA状态ID计数器
 
         // 步骤2：处理工作队列，生成所有DFA状态和转移
@@ -172,9 +167,6 @@ public class SubsetConstruction {
                     dfa.setStateMappingBetweenDFAAndNFA(nextDfaState, nextNfaSet); // 记录映射
                     nfaSetToDfaState.put(nextNfaSet, nextDfaState);
                     worklist.offer(nextNfaSet); // 新状态子集入队待处理
-
-                    // 打印新DFA状态（调试用）
-                    System.out.println("DFA State:" + nextDfaState.getSid() + ":" + nextDfaState.getType() + " NFA State set: " + formatStateSet(nextNfaSet));
                 } else {
                     // 已存在：复用已有DFA状态
                     nextDfaState = nfaSetToDfaState.get(nextNfaSet);
@@ -190,7 +182,7 @@ public class SubsetConstruction {
 
         // 重新编号DFA状态ID（保证ID从0开始连续）
         dfa.renumberSID();
-
+        System.out.println(dfa.StateMappingBetweenDFAAndNFAToString());
         return dfa;
     }
 
@@ -208,25 +200,4 @@ public class SubsetConstruction {
         return false;
     }
 
-    /**
-     * 格式化状态集合为字符串（调试打印用）
-     * @param nfaSet NFA状态集合
-     * @return 形如 {0,1,2} 的字符串
-     */
-    private String formatStateSet(HashMap<Integer, State> nfaSet) {
-        if (nfaSet.isEmpty()) {
-            return "{}";
-        }
-        List<Integer> ids = new ArrayList<>(nfaSet.keySet());
-        Collections.sort(ids); // 排序保证输出有序
-        StringBuilder sb = new StringBuilder("{");
-        for (int i = 0; i < ids.size(); i++) {
-            sb.append(ids.get(i));
-            if (i < ids.size() - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("}");
-        return sb.toString();
-    }
 }
