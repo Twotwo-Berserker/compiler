@@ -223,9 +223,12 @@ public class StateMinimization {
             }
         }
         
+        // Renumber minimized DFA state SIDs to be sequential starting from 0
+        minDfa.renumberSID();
+        
         // Print the final minimized DFA
         System.out.println("\nShow the final DFA");
-        System.out.println("Start State:" + minDfa.getStartState().getId());
+        System.out.println("Start State:" + minDfa.getStartState().getSid());
         System.out.println("the transitTable is:");
         for (LabelEdge edge : minDfa.getTransitTable().edgeSet()) {
             System.out.println("(" + edge.toString() + ")");
